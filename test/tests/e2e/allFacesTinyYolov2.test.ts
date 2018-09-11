@@ -25,7 +25,7 @@ describe('allFacesTinyYolov2', () => {
       const expectedScores = [0.9, 0.9, 0.89, 0.85, 0.85, 0.85]
       const maxBoxDelta = 5
       const maxLandmarkPointsDelta = 10
-      const maxDescriptorDelta = 0.06
+      const maxDescriptorDelta = 0.07
 
       const results = await allFacesTinyYolov2(imgEl, { inputSize: TinyYolov2Types.SizeType.LG })
       const detectionOrder = [0, 2, 3, 4, 1, 5]

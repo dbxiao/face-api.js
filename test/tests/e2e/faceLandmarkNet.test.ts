@@ -11,7 +11,7 @@ import {
   toNetInput,
 } from '../../../src';
 import { FaceLandmarks68 } from '../../../src/classes/FaceLandmarks68';
-import { FaceLandmarkNet } from '../../../src/faceLandmarkNet/FaceLandmarkNet';
+import { FaceLandmarkNet } from '../../../src/faceLandmarkNet';
 import { describeWithNets, expectAllTensorsReleased, expectMaxDelta } from '../../utils';
 
 function getInputDims (input: tf.Tensor | TMediaElement): Dimensions {

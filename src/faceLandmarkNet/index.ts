@@ -1,6 +1,9 @@
-import { FaceLandmarkNet } from './FaceLandmarkNet';
+import { FaceLandmark68Net } from './FaceLandmark68Net';
 
-export * from './FaceLandmarkNet';
+export * from './FaceLandmark68Net';
+export * from './FaceLandmark68MobileNet';
+
+export class FaceLandmarkNet extends FaceLandmark68Net {}
 
 export function createFaceLandmarkNet(weights: Float32Array) {
   const net = new FaceLandmarkNet()

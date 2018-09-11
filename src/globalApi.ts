@@ -7,7 +7,7 @@ import { FaceDetection } from './classes/FaceDetection';
 import { FaceLandmarks68 } from './classes/FaceLandmarks68';
 import { FullFaceDescription } from './classes/FullFaceDescription';
 import { FaceDetectionNet } from './faceDetectionNet/FaceDetectionNet';
-import { FaceLandmarkNet } from './faceLandmarkNet/FaceLandmarkNet';
+import { FaceLandmarkNet } from './faceLandmarkNet';
 import { FaceRecognitionNet } from './faceRecognitionNet/FaceRecognitionNet';
 import { Mtcnn } from './mtcnn/Mtcnn';
 import { MtcnnForwardParams, MtcnnResult } from './mtcnn/types';
