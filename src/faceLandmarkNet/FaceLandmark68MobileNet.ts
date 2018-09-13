@@ -1,11 +1,24 @@
 import * as tf from '@tensorflow/tfjs-core';
-import { NetInput } from 'tfjs-image-recognition-base';
+import { NetInput, normalize } from 'tfjs-image-recognition-base';
 
-import { dephtwiseSeparableConv } from './dephtwiseSeparableConv';
+import { depthwiseSeparableConv } from './depthwiseSeparableConv';
 import { extractMobilenetParams } from './extractMobilenetParams';
 import { FaceLandmark68NetBase } from './FaceLandmark68NetBase';
-import { fullyConnectedLayer } from './fullyConnectedLayer';
 import { MobilenetParams } from './types';
+import { fullyConnectedLayer } from './fullyConnectedLayer';
+import { SeparableConvParams } from 'tfjs-tiny-yolov2/build/tinyYolov2/types';
+
+function residual(
+  x: tf.Tensor4D,
+  conv1Params: SeparableConvParams,
+  conv2Params: SeparableConvParams
+): tf.Tensor4D {
+  return tf.tidy(() => {
+    const out1 = depthwiseSeparableConv(x, conv1Params, [2, 2])
+    const out2 = depthwiseSeparableConv(out1, conv2Params, [1, 1], false)
+    return tf.relu(tf.add(out1, out2)) as tf.Tensor4D
+  })
+}
 
 export class FaceLandmark68MobileNet extends FaceLandmark68NetBase<MobilenetParams> {
 
@@ -23,16 +36,13 @@ export class FaceLandmark68MobileNet extends FaceLandmark68NetBase<MobilenetPara
 
     return tf.tidy(() => {
       const batchTensor = input.toBatchTensor(112, true)
+      const meanRgb = [122.782, 117.001, 104.298]
+      const normalized = normalize(batchTensor, meanRgb).div(tf.scalar(255)) as tf.Tensor4D
 
-      let out = dephtwiseSeparableConv(batchTensor, params.conv0, [2, 2])
-      out = dephtwiseSeparableConv(batchTensor, params.conv1, [1, 1])
-      out = dephtwiseSeparableConv(batchTensor, params.conv2, [2, 2])
-      out = dephtwiseSeparableConv(batchTensor, params.conv3, [1, 1])
-      out = dephtwiseSeparableConv(batchTensor, params.conv4, [2, 2])
-      out = dephtwiseSeparableConv(batchTensor, params.conv5, [1, 1])
-      out = dephtwiseSeparableConv(batchTensor, params.conv6, [2, 2])
-      out = dephtwiseSeparableConv(batchTensor, params.conv7, [1, 1])
-      out = tf.avgPool(out, [7, 7], [1, 1], 'valid')
+      let out = residual(normalized, params.conv0,  params.conv1)
+      out = residual(out, params.conv2,  params.conv3)
+      out = residual(out, params.conv4,  params.conv5)
+      out = tf.avgPool(out, [14, 14], [2, 2], 'valid')
 
       return fullyConnectedLayer(out.as2D(out.shape[0], -1), params.fc)
     })

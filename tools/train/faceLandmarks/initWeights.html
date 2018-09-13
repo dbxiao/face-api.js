@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@0.12.0"> </script>
+  <script src="../node_modules/file-saver/FileSaver.js"></script>
+</head>
+<body>
+
+  <div class="row side-by-side">
+    <button
+      class="waves-effect waves-light btn"
+      onclick="save()"
+    >
+      Save
+    </button>
+  </div>
+
+  <script>
+    function toDataArray(tensor) {
+      return Array.from(tensor.dataSync())
+    }
+
+    function flatten(arrs) {
+      return arrs.reduce((flat, arr) => flat.concat(arr))
+    }
+
+    function initTinyYolov2SeparableWeights(
+      initializer = tf.initializers.glorotNormal()
+    ) {
+      function initSeparableConvWeights(inChannels, outChannels) {
+        return flatten(
+          [
+            // depthwise filter
+            initializer.apply([3, 3, inChannels, 1]),
+            // pointwise filter
+            initializer.apply([1, 1, inChannels, outChannels]),
+            // bias
+            tf.zeros([outChannels])
+          ]
+            .map(toDataArray)
+        )
+      }
+
+      const separableConvWeights = flatten([
+        initSeparableConvWeights(3, 32),
+        initSeparableConvWeights(32, 32),
+        initSeparableConvWeights(32, 32),
+        initSeparableConvWeights(32, 64),
+        initSeparableConvWeights(64, 64),
+        initSeparableConvWeights(64, 64),
+        initSeparableConvWeights(64, 128),
+        initSeparableConvWeights(128, 128),
+        initSeparableConvWeights(128, 128)
+      ])
+
+      const fc = flatten(
+        [
+          initializer.apply([1, 1, 128, 136]),
+          // bias
+          tf.zeros([136])
+        ]
+          .map(toDataArray)
+      )
+      return new Float32Array(separableConvWeights.concat(fc))
+    }
+
+    function save() {
+      const initialWeights = initTinyYolov2SeparableWeights()
+      saveAs(new Blob([initialWeights]), `initial_glorot.weights`)
+    }
+
+  </script>
+</body>
+</html>

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="face-api.js"></script>
+  <script src="commons.js"></script>
+  <script src="js/randomCrop.js"></script>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/css/materialize.css">
+  <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/js/materialize.min.js"></script>
+</head>
+<body>
+  <div id="navbar"></div>
+  <div class="center-content page-container">
+    <div class="progress" id="loader">
+      <div class="indeterminate"></div>
+    </div>
+    <div id="result" style="position: relative" class="margin">
+      <img id="inputImg" src="" style="max-width: 400px;" />
+      <canvas id="overlay" />
+    </div>
+    <div class="row">
+      <label for="imgByNr">Enter image NR: </label>
+      <input id="imgByNr" type="text" class="bold" value="0"/>
+    </div>
+  </div>
+
+  <script>
+
+    const modelCheckpoint = 'tmp/landmarks_epoch23_rc_e26.weights'
+    let originalImage = null
+
+    function cloneImage(img) {
+      var image = document.createElement("img")
+      image.src = img.src
+      return image
+    }
+
+    function getInputValue(input) {
+      input = input || $('#imgByNr').get(0)
+      return input.value || 0
+    }
+
+    function onKeyDown(e) {
+      e.target.value = (
+        parseInt(e.target.value) + (e.keyCode === 38 ? 1 : (e.keyCode === 40 ? -1 : 0))
+      ) || getInputValue(e.target)
+
+
+      const imgUri = window.testPtsFiles[e.target.value].replace('.json', '.png')
+
+      console.log(imgUri)
+      onSelectionChanged(imgUri)
+    }
+
+    async function updateResults(_landmarks) {
+      const inputImgEl = $('#inputImg').get(0)
+      const { width, height } = inputImgEl
+      const canvas = $('#overlay').get(0)
+      canvas.width = width
+      canvas.height = height
+
+      console.time('detectLandmarks')
+      const landmarks = //_landmarks ||
+        await net.detectLandmarks(inputImgEl)
+      console.timeEnd('detectLandmarks')
+      faceapi.drawLandmarks('overlay', landmarks.forSize(width, height), { drawLines: true })
+    }
+
+    async function onSelectionChanged(imgUri) {
+      const img = await faceapi.bufferToImage(await fetchImage(imgUri))
+
+      $('#inputImg').get(0).src = img.src
+      originalImage = cloneImage(img)
+      updateResults()
+    }
+
+    async function applyRandomCrop() {
+      const ptsFile = window.testPtsFiles[getInputValue()]
+      const pts = await (await fetch(ptsFile)).json()
+
+      const img = cloneImage(originalImage)
+      img.id = 'inputImg'
+
+      const { croppedImage, shiftedPts } = randomCrop(img, pts)
+      $('#result').get(0).removeChild($('#inputImg').get(0))
+      img.src = croppedImage.toDataURL()
+      $('#result').get(0).appendChild(img)
+      const { width, height } = croppedImage
+      img.onload = () => updateResults(
+        new faceapi.FaceLandmarks68(
+          shiftedPts.map(pt =>
+            new faceapi.Point(
+              pt.x / width,
+              pt.y / height
+            )
+          ),
+          { width, height }
+        )
+      )
+    }
+
+    async function loadNetWeights(uri) {
+      return new Float32Array(await (await fetch(uri)).arrayBuffer())
+    }
+
+    async function run() {
+      $('#imgByNr').keydown(onKeyDown)
+
+      window.ptsFiles = (await fetch('/face_landmarks_train_filenames').then(res => res.json()))
+      window.testPtsFiles = (await fetch('/face_landmarks_test_filenames').then(res => res.json()))
+      window.net = new faceapi.FaceLandmark68MobileNet()
+      const weights = await loadNetWeights(modelCheckpoint)
+      await window.net.load(weights)
+
+      $('#loader').hide()
+    }
+
+    $(document).ready(() => run())
+
+  </script>
+</body>
+</html>

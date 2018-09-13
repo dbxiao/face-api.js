@@ -23,7 +23,7 @@
   "dependencies": {
     "@tensorflow/tfjs-core": "^0.12.14",
     "tfjs-image-recognition-base": "^0.0.0",
-    "tfjs-tiny-yolov2": "0.0.2"
+    "tfjs-tiny-yolov2": "^0.0.5"
   },
   "devDependencies": {
     "@types/jasmine": "^2.8.8",

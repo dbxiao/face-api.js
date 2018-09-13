@@ -1,3 +1,4 @@
+import * as tf from '@tensorflow/tfjs-core';
 import { ConvParams, FCParams } from 'tfjs-tiny-yolov2';
 import { SeparableConvParams } from 'tfjs-tiny-yolov2/build/tinyYolov2/types';
 
@@ -14,6 +15,26 @@ export type NetParams = {
   fc1: FCParams
 }
 
+export type ConvWithBatchNormParams = BatchNormParams & {
+  filter: tf.Tensor4D
+}
+
+export type BatchNormParams = {
+  mean: tf.Tensor1D
+  variance: tf.Tensor1D
+  scale: tf.Tensor1D
+  offset: tf.Tensor1D
+}
+
+export type SeparableConvWithBatchNormParams = {
+  depthwise: ConvWithBatchNormParams
+  pointwise: ConvWithBatchNormParams
+}
+
+export declare type FCWithBatchNormParams = BatchNormParams & {
+    weights: tf.Tensor2D
+}
+
 export type MobilenetParams = {
   conv0: SeparableConvParams
   conv1: SeparableConvParams
@@ -21,7 +42,6 @@ export type MobilenetParams = {
   conv3: SeparableConvParams
   conv4: SeparableConvParams
   conv5: SeparableConvParams
-  conv6: SeparableConvParams
-  conv7: SeparableConvParams
   fc: FCParams
 }
+
